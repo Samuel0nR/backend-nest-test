@@ -10,10 +10,14 @@ pipeline {
 
     stages {
         stage('Instalación de dependencias') {
+            agent {
+                docker {
+                    image 'node:22'
+                    reuseNode true
+                }
+            }
             steps {
-                sh 'node -v'
-                sh 'npm -v'
-                sh 'npm install'
+                sh 'npm ci'
             }
         }
 
