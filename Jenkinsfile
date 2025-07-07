@@ -16,24 +16,25 @@ pipeline {
                     reuseNode true
                 }
             }
-            steps {
-                sh 'npm ci'
+           stages {
+                stage("Instalacion de Dependencias"){
+                    steps {
+                        sh 'npm ci'
+                    }
+                }
+                stage("Inicio Testing"){
+                    steps {
+                        sh 'npm run test:cov'
+                    }
+                }
+                stage("Deploy"){
+                    steps {
+                        sh 'npm run build'
+                    }
+                }
             }
         }
-
-        stage('Testing') {
-            steps {
-                sh 'npm run test'
-            }
-        }
-
-        stage('Build') {
-            steps {
-                sh 'npm run build'
-            }
-        }
-
-        stage ("build y push de imagen docker"){
+        stage ("Build y push Docker"){
             steps {
                 script {
                     docker.withRegistry("${registry}", registryCredentials ){
@@ -44,7 +45,7 @@ pipeline {
                 }
             }
         }
-        stage ("actualizacion de kubernetes"){
+        stage ("Actualización de Kubernetes"){
             agent {
                 docker {
                     image 'alpine/k8s:1.30.2'
