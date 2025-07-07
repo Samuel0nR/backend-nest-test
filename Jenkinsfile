@@ -11,6 +11,8 @@ pipeline {
     stages {
         stage('Instalación de dependencias') {
             steps {
+                sh 'node -v'
+                sh 'npm -v'
                 sh 'npm install'
             }
         }
