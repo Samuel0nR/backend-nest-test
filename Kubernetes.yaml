@@ -50,7 +50,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: gyy.devops.cl
+  - host: sr.devops.cl
     http:
       paths:
       - path: /
