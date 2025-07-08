@@ -1,51 +1,58 @@
 pipeline {
+
     agent any
-
+    //escenarios -> escenario -> pasos
     environment{
-        NPM_CONFIG_CACHE= "${WORKSPACE}/.npm"
-        dockerImagePrefix = "us-west1-docker.pkg.dev/lab-agibiz/docker-repository"
+        NPM_CONFIG_CACHE="${WORKSPACE}/.npm"
+        dockerimagePrefix = "us-west1-docker.pkg.dev/lab-agibiz/docker-repository"
         registry = "https://us-west1-docker.pkg.dev"
-        registryCredentials = "gcp-registry"
+        registryCredentials = 'gcp-registry'
     }
+    stages{
 
-    stages {
-        stage('Instalación de dependencias') {
+        stage ("proceso de build y test") {
             agent {
                 docker {
                     image 'node:22'
                     reuseNode true
                 }
             }
-           stages {
-                stage("Instalacion de Dependencias"){
-                    steps {
+
+            stages {
+                stage("instalacion de dependencias"){
+                    steps{
                         sh 'npm ci'
                     }
                 }
-                stage("Inicio Testing"){
-                    steps {
+                stage("test"){
+                    steps{
                         sh 'npm run test:cov'
                     }
                 }
-                stage("Deploy"){
-                    steps {
+                stage("build de la aplicacion"){
+                    steps{
                         sh 'npm run build'
                     }
                 }
+
             }
+
         }
-        stage ("Build y push Docker"){
-            steps {
-                script {
-                    docker.withRegistry("${registry}", registryCredentials ){
+        stage ("build y push de imagen docker"){
+            steps{
+                script{
+                    docker.withRegistry("${registry}", registryCredentials){
                         sh "docker build -t backend-nest-test-sr ."
-                        sh "docker tag backend-nest-sr ${dockerImagePrefix}/backend-nest-test-sr"
-                        sh "docker push ${dockerImagePrefix}/backend-nest-test-sr"
+                        sh "docker tag backend-nest-test-sr ${dockerimagePrefix}/backend-nest-test-sr"
+                        sh "docker tag backend-nest-test-sr ${dockerimagePrefix}/backend-nest-test-sr:${BUILD_NUMBER}"
+                        sh "docker push ${dockerimagePrefix}/backend-nest-test-sr"
+                        sh "docker push ${dockerimagePrefix}/backend-nest-test-sr:${BUILD_NUMBER}"
                     }
                 }
+
             }
         }
-        stage ("Actualización de Kubernetes"){
+        stage ("actualizacion de kubernetes"){
             agent {
                 docker {
                     image 'alpine/k8s:1.30.2'
@@ -54,18 +61,9 @@ pipeline {
             }
             steps {
                 withKubeConfig([credentialsId: 'gcp-kubeconfig']){
-                    sh 'kubectl -n lab-sr set image deployments/backend-nest-test-sr backend-nest-sr=us-west1-docker.pkg.dev/lab-agibiz/docker-repository/backend-nest-test-sr'
+                    sh 'kubectl -n lab-test-sr set image deployments/backend-nest-test-sr backend-nest-test-sr=${dockerimagePrefix}/backend-nest-test-sr:${BUILD_NUMBER}'
                 }
             }
-        }
-    }
-
-    post {
-        success {
-            echo 'Pipeline finalizado correctamente.'
-        }
-        failure {
-            echo 'Error en el pipeline.'
         }
     }
 }

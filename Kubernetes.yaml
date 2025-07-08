@@ -1,36 +1,62 @@
-
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: lab-test-sr
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-nest-test-sr
+  namespace: lab-test-sr
+  labels:
+    app: backend-nest-test-sr
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend-nest-test-sr
+  template:
+    metadata:
+      labels:
+        app: backend-nest-test-sr
+    spec:
+      containers:
+      - name: backend-nest-test-sr
+        image: us-west1-docker.pkg.dev/lab-agibiz/docker-repository/backend-nest-test-sr
+        imagePullPolicy: Always
+      imagePullSecrets:
+      - name: regcredgy
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: backend-nest-test-sr
-  namespace: lab-sr
+  name: backend-nest-sr
+  namespace: lab-test-sr
   labels:
-    app: backend-nest-test-sr
+    app: backend-nest-sr
 spec:
   selector:
     app: backend-nest-test-sr
   ports:
   - protocol: TCP
     port: 80
-    targetPort: 3001
-
+    targetPort: 4000
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ingress-backend-nest-test-sr
-  namespace: lab-sr
+  namespace: lab-test-sr
 spec:
   ingressClassName: nginx
   rules:
-  - host: sr.devops.cl
+  - host: gyy.devops.cl
     http:
       paths:
       - path: /
         pathType: ImplementationSpecific
         backend:
           service:
-            name: backend-nest-test-sr
+            name: backend-nest-sr
             port:
               number: 80
